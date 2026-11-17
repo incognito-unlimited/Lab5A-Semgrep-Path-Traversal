@@ -1,0 +1,81 @@
+SEMGREP ANALYSIS - LAB 5A - BEFORE REMEDIATION (vulnerable.py)
+==========================================
+
+Date/time (UTC): 2026-11-17 23:31:25 UTC
+Semgrep version: 1.185.0
+Working directory: /mnt/d/Projects/Lab5A-Semgrep-Path-Traversal
+Platform: Ubuntu 26.04.1 LTS (Linux 6.18.58.1-microsoft-standard-WSL2)
+
+RULESET 1 (registry): p/python - Semgrep registry Python security/audit rules
+RULESET 2 (custom):   rules/path_traversal_unvalidated.yml - documented custom rule
+Both rulesets are applied identically to vulnerable.py and secure_file_reader.py.
+
+--- RUN 1: registry ruleset (text output) ---
+Command: semgrep scan --config p/python vulnerable.py 2>&1
+
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 1 file tracked by git with 151 Code rules:
+  Scanning 1 file with 151 python rules.
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 0 (0 blocking)
+ • Rules run: 151
+ • Targets scanned: 1
+ • Parsed lines: ~100.0%
+ • No ignore information available
+Ran 151 rules on 1 file: 0 findings.
+(need more rules? `semgrep login` for additional free Semgrep Registry rules)
+
+If Semgrep missed a finding, please send us feedback to let us know!
+See https://semgrep.dev/docs/reporting-false-negatives/
+
+--- RUN 2: custom rule (text output) ---
+Command: semgrep scan --config rules/path_traversal_unvalidated.yml vulnerable.py 2>&1
+
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 1 file tracked by git with 1 Code rule:
+  Scanning 1 file.
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 1 (1 blocking)
+ • Rules run: 1
+ • Targets scanned: 1
+ • Parsed lines: ~100.0%
+ • No ignore information available
+Ran 1 rule on 1 file: 1 finding.
+                  
+                  
+┌────────────────┐
+│ 1 Code Finding │
+└────────────────┘
+                 
+    vulnerable.py
+   ❯❯❱ rules.python-path-traversal-unvalidated-filename
+          ❰❰ Blocking ❱❱
+          User-controlled input from input() is joined to a base directory and opened without canonical path
+          resolution or a containment check. A filename such as ../outside.txt (or an absolute path) escapes
+          the intended directory. Resolve the path, reject absolute paths, and verify that the resolved     
+          candidate remains inside the safe directory.                                                      
+                                                                                                            
+            5┆ filename = input("Enter filename: ")
+            6┆ target = BASE_DIR / filename
+            7┆
+            8┆ with target.open("r", encoding="utf-8") as file:
+            9┆     print(file.read())
+

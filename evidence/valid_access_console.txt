@@ -1,0 +1,17 @@
+LAB 5A - CONSOLE TRANSCRIPT: VALID FILE ACCESS
+=============================================
+
+$ cd /mnt/d/Projects/Lab5A-Semgrep-Path-Traversal
+$ printf "sample.txt\n" | python3 secure_file_reader.py
+Enter filename: Lab 5A sample file.
+This file lives inside the permitted files/ directory.
+It is safe to read with either implementation.
+
+
+$ printf "sample.txt\n" | python3 vulnerable.py
+Enter filename: Lab 5A sample file.
+This file lives inside the permitted files/ directory.
+It is safe to read with either implementation.
+
+
+Result: both programs read the in-scope file successfully.

@@ -1,0 +1,221 @@
+LAB 5A - FUNCTIONAL TEST RESULTS
+==============================================================================
+Generated (UTC) : 2026-11-17 23:34:16 UTC
+Python          : 3.14.4
+Platform        : Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.43
+Working dir     : /mnt/d/Projects/Lab5A-Semgrep-Path-Traversal
+Command pattern : python3 <program>   (input supplied on stdin)
+
+Synthetic fixtures (no real sensitive system files were used):
+  files/sample.txt       - legitimate file inside the safe directory
+  outside.txt            - harmless marker at /mnt/d/Projects/Lab5A-Semgrep-Path-Traversal/outside.txt
+  files/escape_link.txt  - symlink -> ../outside.txt (created by this test)
+
+The vulnerable program is expected to demonstrate the flaw; the secure program is expected to reject every out-of-scope input.
+
+------------------------------------------------------------------------------
+TEST 1: Valid filename
+------------------------------------------------------------------------------
+Description : Read the legitimate in-scope file inside files/.
+Input       : 'sample.txt'
+Expected    : both allow
+
+VULNERABLE (vulnerable.py)
+  Exit code  : 0
+  Behaviour  : ALLOWED - in-scope sample.txt content was printed
+  STDOUT:
+    Enter filename: Lab 5A sample file.
+    This file lives inside the permitted files/ directory.
+    It is safe to read with either implementation.
+  STDERR:
+    (empty)
+
+SECURE (secure_file_reader.py)
+  Exit code  : 0
+  Behaviour  : ALLOWED - in-scope sample.txt content was printed
+  STDOUT:
+    Enter filename: Lab 5A sample file.
+    This file lives inside the permitted files/ directory.
+    It is safe to read with either implementation.
+  STDERR:
+    (empty)
+
+------------------------------------------------------------------------------
+TEST 2: Single parent traversal
+------------------------------------------------------------------------------
+Description : One ../ segment should leave the files/ directory.
+Input       : '../outside.txt'
+Expected    : vulnerable escapes / secure rejects
+
+VULNERABLE (vulnerable.py)
+  Exit code  : 0
+  Behaviour  : ESCAPED - content from outside files/ was printed
+  STDOUT:
+    Enter filename: OUTSIDE-SENSITIVE-MARKER: this file is outside the files/ directory.
+    It is a harmless synthetic test file used only to demonstrate path traversal.
+  STDERR:
+    (empty)
+
+SECURE (secure_file_reader.py)
+  Exit code  : 0
+  Behaviour  : REJECTED - clear containment/absolute-path error
+  STDOUT:
+    Enter filename: Error: Access outside the permitted directory is not allowed
+  STDERR:
+    (empty)
+
+------------------------------------------------------------------------------
+TEST 3: Multiple parent traversal segments
+------------------------------------------------------------------------------
+Description : Two ../ segments walk further up and back into the project root.
+Input       : '../../Lab5A-Semgrep-Path-Traversal/outside.txt'
+Expected    : vulnerable escapes / secure rejects
+
+VULNERABLE (vulnerable.py)
+  Exit code  : 0
+  Behaviour  : ESCAPED - content from outside files/ was printed
+  STDOUT:
+    Enter filename: OUTSIDE-SENSITIVE-MARKER: this file is outside the files/ directory.
+    It is a harmless synthetic test file used only to demonstrate path traversal.
+  STDERR:
+    (empty)
+
+SECURE (secure_file_reader.py)
+  Exit code  : 0
+  Behaviour  : REJECTED - clear containment/absolute-path error
+  STDOUT:
+    Enter filename: Error: Access outside the permitted directory is not allowed
+  STDERR:
+    (empty)
+
+------------------------------------------------------------------------------
+TEST 4: Absolute path
+------------------------------------------------------------------------------
+Description : An absolute path replaces the intended base directory.
+Input       : '/mnt/d/Projects/Lab5A-Semgrep-Path-Traversal/outside.txt'
+Expected    : vulnerable escapes / secure rejects
+
+VULNERABLE (vulnerable.py)
+  Exit code  : 0
+  Behaviour  : ESCAPED - content from outside files/ was printed
+  STDOUT:
+    Enter filename: OUTSIDE-SENSITIVE-MARKER: this file is outside the files/ directory.
+    It is a harmless synthetic test file used only to demonstrate path traversal.
+  STDERR:
+    (empty)
+
+SECURE (secure_file_reader.py)
+  Exit code  : 0
+  Behaviour  : REJECTED - clear containment/absolute-path error
+  STDOUT:
+    Enter filename: Error: Absolute paths are not allowed
+  STDERR:
+    (empty)
+
+------------------------------------------------------------------------------
+TEST 5: Missing file
+------------------------------------------------------------------------------
+Description : A nonexistent in-scope filename must produce a clean error.
+Input       : 'does_not_exist.txt'
+Expected    : both report missing file; secure stays clean
+
+VULNERABLE (vulnerable.py)
+  Exit code  : 1
+  Behaviour  : TRACEBACK - unhandled exception leaked to the user
+  STDOUT:
+    Enter filename: 
+  STDERR:
+    Traceback (most recent call last):
+      File "/mnt/d/Projects/Lab5A-Semgrep-Path-Traversal/vulnerable.py", line 8, in <module>
+        with target.open("r", encoding="utf-8") as file:
+             ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+      File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+        return io.open(self, mode, buffering, encoding, errors, newline)
+               ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    FileNotFoundError: [Errno 2] No such file or directory: 'files/does_not_exist.txt'
+
+SECURE (secure_file_reader.py)
+  Exit code  : 0
+  Behaviour  : CLEAN ERROR - safe, generic error message
+  STDOUT:
+    Enter filename: Error: Requested file does not exist
+  STDERR:
+    (empty)
+
+------------------------------------------------------------------------------
+TEST 6: Empty filename
+------------------------------------------------------------------------------
+Description : Pressing Enter with no filename must produce a clean error.
+Input       : ''
+Expected    : both error; secure stays clean
+
+VULNERABLE (vulnerable.py)
+  Exit code  : 1
+  Behaviour  : TRACEBACK - unhandled exception leaked to the user
+  STDOUT:
+    Enter filename: 
+  STDERR:
+    Traceback (most recent call last):
+      File "/mnt/d/Projects/Lab5A-Semgrep-Path-Traversal/vulnerable.py", line 8, in <module>
+        with target.open("r", encoding="utf-8") as file:
+             ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+      File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+        return io.open(self, mode, buffering, encoding, errors, newline)
+               ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    IsADirectoryError: [Errno 21] Is a directory: 'files'
+
+SECURE (secure_file_reader.py)
+  Exit code  : 0
+  Behaviour  : CLEAN ERROR - safe, generic error message
+  STDOUT:
+    Enter filename: Error: Filename must be a non-empty string
+  STDERR:
+    (empty)
+
+------------------------------------------------------------------------------
+TEST 7: Symlink pointing outside files/
+------------------------------------------------------------------------------
+Description : files/escape_link.txt is a symlink to ../outside.txt.
+Input       : 'escape_link.txt'
+Expected    : vulnerable follows it / secure rejects it
+
+VULNERABLE (vulnerable.py)
+  Exit code  : 0
+  Behaviour  : ESCAPED - content from outside files/ was printed
+  STDOUT:
+    Enter filename: OUTSIDE-SENSITIVE-MARKER: this file is outside the files/ directory.
+    It is a harmless synthetic test file used only to demonstrate path traversal.
+  STDERR:
+    (empty)
+
+SECURE (secure_file_reader.py)
+  Exit code  : 0
+  Behaviour  : REJECTED - clear containment/absolute-path error
+  STDOUT:
+    Enter filename: Error: Access outside the permitted directory is not allowed
+  STDERR:
+    (empty)
+
+------------------------------------------------------------------------------
+SUMMARY
+------------------------------------------------------------------------------
+Case                                 Vulnerable                                   Secure                                      
+------------------------------------------------------------------------------------------------------------------------------
+Valid filename                       ALLOWED - in-scope sample.txt content was printed ALLOWED - in-scope sample.txt content was printed
+Single parent traversal              ESCAPED - content from outside files/ was printed REJECTED - clear containment/absolute-path error
+Multiple parent traversal segments   ESCAPED - content from outside files/ was printed REJECTED - clear containment/absolute-path error
+Absolute path                        ESCAPED - content from outside files/ was printed REJECTED - clear containment/absolute-path error
+Missing file                         TRACEBACK - unhandled exception leaked to the user CLEAN ERROR - safe, generic error message   
+Empty filename                       TRACEBACK - unhandled exception leaked to the user CLEAN ERROR - safe, generic error message   
+Symlink pointing outside files/      ESCAPED - content from outside files/ was printed REJECTED - clear containment/absolute-path error
+
+OBSERVATIONS
+------------------------------------------------------------------------------
+  * The vulnerable program leaked out-of-scope content in 4 of 7 cases.
+  * The secure program rejected 4 path-escape attempts (traversal, absolute path and symlink).
+  * The secure program produced a clean (non-traceback) result in 7 of 7 cases.
+  * Both programs read files/sample.txt successfully, so the fix did not break legitimate use.
+
+CONCLUSION
+------------------------------------------------------------------------------
+Path traversal is confirmed in vulnerable.py: user input is joined to the base directory and opened without canonicalisation or containment checks. secure_file_reader.py rejects every escape attempt, resolves symlinks before validation and returns generic error messages.

@@ -1,0 +1,42 @@
+SEMGREP BEFORE/AFTER COMPARISON - LAB 5A
+========================================
+Semgrep version: 1.185.0 (OSS engine)
+Both scans used identical versions, rulesets and options.
+
+REGISTRY RULESET p/python
+-------------------------
+  Findings before : 0
+  Findings after  : 0
+  Errors before   : 0
+  Errors after    : 0
+  [before] no findings
+  [after] no findings
+
+CUSTOM RULE rules/path_traversal_unvalidated.yml
+------------------------------------------------
+  Findings before : 1
+  Findings after  : 0
+  Errors before   : 0
+  Errors after    : 0
+  [before] rules.python-path-traversal-unvalidated-filename | ERROR | vulnerable.py:5-9
+  [after] no findings
+
+CUSTOM RULE FINDING DETAIL (vulnerable.py)
+------------------------------------------
+  Rule ID      : rules.python-path-traversal-unvalidated-filename
+  Severity     : ERROR
+  Confidence   : HIGH (declared in rules/path_traversal_unvalidated.yml; not emitted in JSON extra by Semgrep OSS)
+  Source line  : 5 (matched region 5-9)
+  Code         : see semgrep_before.txt (JSON "lines" field is login-gated and reports "requires login")
+  Message      : User-controlled input from input() is joined to a base directory and opened without canonical path resolution or a containment check. A filename such as ../outside.txt (or an absolute path) escapes the intended directory. Resolve the path, reject absolute paths, and verify that the resolved candidate remains inside the safe directory.
+  Validation   : NO_VALIDATOR
+
+INTERPRETATION
+--------------
+p/python (151 rules) produced 0 findings on both programs. It does not model
+this unvalidated input() -> path-join -> open() flow. The custom rule detected
+the vulnerable construct at vulnerable.py lines 5-9 and produced 0 findings
+on the remediated program, which validates input, resolves paths canonically
+and enforces directory containment before opening the file.
+A clean Semgrep result does not by itself prove the absence of path traversal;
+functional traversal tests in evidence/test_results.txt provide that check.

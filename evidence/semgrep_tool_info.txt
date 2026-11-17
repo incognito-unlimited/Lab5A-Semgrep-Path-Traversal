@@ -1,0 +1,7 @@
+SEMGREP VERSION
+===============
+1.185.0
+
+Date/time (UTC): 2026-11-17 23:27:53 UTC
+Working directory: /mnt/d/Projects/Lab5A-Semgrep-Path-Traversal
+Ruleset: p/python (Semgrep registry Python security/audit rules)

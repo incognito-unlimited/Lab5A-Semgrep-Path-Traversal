@@ -1,0 +1,22 @@
+LAB 5A - CONSOLE TRANSCRIPT: REJECTED TRAVERSAL ATTEMPTS
+========================================================
+
+Fixture: files/escape_link.txt is a symlink to ../outside.txt
+
+$ ln -s ../outside.txt files/escape_link.txt
+
+$ printf "../outside.txt\n" | python3 secure_file_reader.py
+Enter filename: Error: Access outside the permitted directory is not allowed
+
+$ printf "../../Lab5A-Semgrep-Path-Traversal/outside.txt\n" | python3 secure_file_reader.py
+Enter filename: Error: Access outside the permitted directory is not allowed
+
+$ printf "/mnt/d/Projects/Lab5A-Semgrep-Path-Traversal/outside.txt\n" | python3 secure_file_reader.py
+Enter filename: Error: Absolute paths are not allowed
+
+$ printf "escape_link.txt\n" | python3 secure_file_reader.py
+Enter filename: Error: Access outside the permitted directory is not allowed
+
+$ rm -f files/escape_link.txt
+
+Result: every out-of-scope path was rejected with a clear, generic message.

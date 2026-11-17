@@ -1,0 +1,31 @@
+# Custom Semgrep rule for Lab 5A.
+#
+# The registry ruleset p/python (151 rules in Semgrep 1.185.0) did not flag the
+# vulnerable pattern. This narrowly scoped rule matches the exact data flow:
+# input() -> base-directory join -> file open, with no validation step between
+# the source and the sink. It is applied identically to vulnerable.py and
+# secure_file_reader.py for the before/after comparison.
+#
+# Limitation: this is a pattern-based rule, not a full taint analysis. It
+# detects the specific unvalidated sequence used in this experiment and may
+# miss refactored variants; a clean result must still be confirmed by review
+# and functional traversal tests.
+rules:
+  - id: python-path-traversal-unvalidated-filename
+    languages:
+      - python
+    severity: ERROR
+    confidence: HIGH
+    message: >-
+      User-controlled input from input() is joined to a base directory and
+      opened without canonical path resolution or a containment check. A
+      filename such as ../outside.txt (or an absolute path) escapes the
+      intended directory. Resolve the path, reject absolute paths, and verify
+      that the resolved candidate remains inside the safe directory.
+    pattern: |
+      $FILENAME = input(...)
+      ...
+      $TARGET = $BASE / $FILENAME
+      ...
+      with $TARGET.open(...) as $F:
+        ...

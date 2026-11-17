@@ -1,0 +1,2 @@
+OUTSIDE-SENSITIVE-MARKER: this file is outside the files/ directory.
+It is a harmless synthetic test file used only to demonstrate path traversal.
