@@ -49,7 +49,9 @@ Lab5A-Semgrep-Path-Traversal/
 │   ├── rejected_traversal_console.txt# verbatim console transcript (rejections)
 │   └── screenshots/                  # 7 genuine screenshots
 ├── report/
-│   └── Lab5A_Report.md
+│   ├── Lab5A_Report.md
+│   ├── Lab_5A_Semgrep_Path_Traversal_Aditey_Mehra.docx
+│   └── Lab_5A_Semgrep_Path_Traversal_Aditey_Mehra.pdf
 ├── README.md
 └── .gitignore
 ```
